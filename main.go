@@ -30,10 +30,10 @@ func main() {
 	timestart := createTimeDifference(starttime)
 	timeend := createTimeDifference(endtime)
 	timepause := createTimeDifference(pausetime)
+
 	fmt.Println(timestart, timeend, timepause)
-	now := time.Now()
-	futuretime := now.Add(timeend).Add(-timestart).Add(-timepause)
-	diff := futuretime.Sub(now)
+
+	diff := calculateTimeDifference(timestart, timeend, timepause)
 	hours := diff.Hours()
 	fmt.Println(diff)
 	fmt.Printf("%.2f\n", hours)
@@ -78,6 +78,13 @@ func validateHoursAndMinutes(input string, minutesAsStandard bool) ([2]int, bool
 		return [2]int{0, 0}, false
 	}
 	return [2]int{hours, minutes}, true
+}
+
+func calculateTimeDifference(start, end, pause time.Duration) time.Duration {
+	now := time.Now()
+	futuretime := now.Add(end).Add(-start).Add(-pause)
+	diff := futuretime.Sub(now)
+	return diff
 }
 
 func createTimeDifference(tm [2]int) time.Duration {
