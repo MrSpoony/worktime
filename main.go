@@ -3,92 +3,38 @@ package main
 import (
 	"flag"
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
+
+	"github.com/MrSpoony/worktime/diff"
+	"github.com/MrSpoony/worktime/validate"
 )
 
 func main() {
 	start := flag.String("s", "08:00", "start time")
 	end := flag.String("e", "17:00", "end time")
-	pause := flag.String("p", "00:30", "pause")
+	breakstr := flag.String("b", "00:30", "break")
 	flag.Parse()
 
-	starttime, isValid := validateHoursAndMinutes(*start, false)
-	if !isValid {
-		fmt.Println("Starting time is malformed")
-	}
-	endtime, isValid := validateHoursAndMinutes(*end, false)
-	if !isValid {
-		fmt.Println("Starting time is malformed")
-	}
-	pausetime, isValid := validateHoursAndMinutes(*pause, true)
-	if !isValid {
-		fmt.Println("Starting time is malformed")
-	}
+	starttime, err := validate.HoursAndMinutes(*start, false)
+	panicOnErr(err)
+	endtime, err := validate.HoursAndMinutes(*end, false)
+	panicOnErr(err)
+	breakdur, err := validate.HoursAndMinutes(*breakstr, true)
+	panicOnErr(err)
 
-	timestart := createTimeDifference(starttime)
-	timeend := createTimeDifference(endtime)
-	timepause := createTimeDifference(pausetime)
+	timestart := diff.IntsToTimeDiff(starttime)
+	timeend := diff.IntsToTimeDiff(endtime)
+	timebreak := diff.IntsToTimeDiff(breakdur)
 
-	fmt.Println(timestart, timeend, timepause)
+	fmt.Printf("Start: %v, End: %v, Pause: %v\n", timestart, timeend, timebreak)
 
-	diff := calculateTimeDifference(timestart, timeend, timepause)
-	hours := diff.Hours()
-	fmt.Println(diff)
+	difference := diff.GetTimeDiff(timestart, timeend, timebreak)
+	hours := difference.Hours()
+	fmt.Printf("Working time: %v\n", difference)
 	fmt.Printf("%.2f\n", hours)
 }
 
-func validateHoursAndMinutes(input string, minutesAsStandard bool) ([2]int, bool) {
-	inputtime := strings.Split(input, ":")
-	if len(inputtime) > 2 {
-		return [2]int{0, 0}, false
-	}
-	if len(inputtime) == 1 {
-		if len(inputtime[0]) > 2 {
-			return validateHoursAndMinutes(input[:2]+":"+input[2:], minutesAsStandard)
-		}
-		stuff, err := strconv.Atoi(inputtime[0])
-		if err != nil {
-			return [2]int{0, 0}, false
-		}
-		if minutesAsStandard {
-			if stuff >= 60 {
-				return [2]int{0, 0}, false
-			}
-			return [2]int{0, stuff}, true
-		}
-		if stuff > 24 {
-			return [2]int{0, 0}, false
-		}
-		return [2]int{stuff, 0}, true
-	}
-	hours, err := strconv.Atoi(inputtime[0])
+func panicOnErr(err error) {
 	if err != nil {
-		return [2]int{0, 0}, false
+		panic(err)
 	}
-	minutes, err := strconv.Atoi(inputtime[1])
-	if err != nil {
-		return [2]int{0, 0}, false
-	}
-	if minutes >= 60 {
-		return [2]int{0, 0}, false
-	}
-	if hours > 24 {
-		return [2]int{0, 0}, false
-	}
-	return [2]int{hours, minutes}, true
-}
-
-func calculateTimeDifference(start, end, pause time.Duration) time.Duration {
-	now := time.Now()
-	futuretime := now.Add(end).Add(-start).Add(-pause)
-	diff := futuretime.Sub(now)
-	return diff
-}
-
-func createTimeDifference(tm [2]int) time.Duration {
-	now := time.Now()
-	duration := now.Add(time.Hour*time.Duration(tm[0]) + time.Minute*time.Duration(tm[1])).Sub(now)
-	return duration
 }
