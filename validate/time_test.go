@@ -65,6 +65,30 @@ func TestHoursAndMinutes(t *testing.T) {
 		{"12:12", false, []int{12, 12}, false},
 		{"1208", false, []int{12, 8}, false},
 		{"12:08", false, []int{12, 8}, false},
+		{"00:00", false, []int{0, 0}, false},
+		{"0000", false, []int{0, 0}, false},
+		// Wrong inputs
+		{"12:08:00", false, nil, true},
+		{"12:08:00", true, nil, true},
+		{"12:1a", true, nil, true},
+		{"1a:00", true, nil, true},
+		{"12:1a", false, nil, true},
+		{"1a:00", false, nil, true},
+		{"121a", true, nil, true},
+		{"1a00", true, nil, true},
+		{"121a", false, nil, true},
+		{"1a00", false, nil, true},
+		{"39:00", true, nil, true},
+		{"3900", true, nil, true},
+		{"39:00", false, nil, true},
+		{"3900", false, nil, true},
+		{"00:72", true, nil, true},
+		{"0072", true, nil, true},
+		{"00:72", false, nil, true},
+		{"0072", false, nil, true},
+		{"072", false, nil, true},
+		{"", false, nil, true},
+		{"a", false, nil, true},
 	}
 	for _, tt := range testcases {
 		name := "valid"
@@ -95,4 +119,10 @@ func TestHoursAndMinutes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func ExampleHoursAndMinutes() {
+	hoursAndMinutes, _ := HoursAndMinutes("08:12", true)
+	fmt.Println("hours:", hoursAndMinutes[0], "minutes:", hoursAndMinutes[1])
+	// Output: hours: 8 minutes: 12
 }
