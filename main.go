@@ -15,6 +15,10 @@ func main() {
 	end := flag.String("e", "17:00", "end time")
 	breakstrb := flag.String("b", "", "break")
 	breakstrp := flag.String("p", "00:30", "break")
+
+	defaultgoal := flag.Bool("d", false, "reach default goal of 8.3")
+	goal := flag.Float64("g", 0, "goal time, overrides default goal")
+
 	flag.Parse()
 
 	if *breakstrb != "" && *breakstrp != "" {
@@ -27,10 +31,6 @@ func main() {
 		breakstr = breakstrb
 	}
 
-	starttime, err := validate.HoursAndMinutes(*start, false)
-	panicOnErr(err)
-	endtime, err := validate.HoursAndMinutes(*end, false)
-	panicOnErr(err)
 	var timebreak time.Duration
 	if strings.Contains(*breakstr, "-") {
 		parts := strings.Split(*breakstr, "-")
@@ -50,15 +50,35 @@ func main() {
 		timebreak = diff.IntsToTimeDiff(breakdur)
 	}
 
+	if *goal == 0 && *defaultgoal {
+		*goal = 8.3
+	}
+
+	if *goal > 0 {
+		timediff, err := validate.HoursAndMinutes(*start, false)
+		panicOnErr(err)
+		timestart := diff.IntsToTimeDiff(timediff)
+		diff := time.Duration(float64(time.Hour) * *goal)
+		timeend := timestart + timebreak + diff
+		fmt.Printf("Start: %v, End: %v, Pause: %v\n", timestart, timeend, timebreak)
+		fmt.Printf("Working time: %v\n", diff)
+		fmt.Printf("%.2f\n", diff.Hours())
+		return
+	}
+
+	starttime, err := validate.HoursAndMinutes(*start, false)
+	panicOnErr(err)
+	endtime, err := validate.HoursAndMinutes(*end, false)
+	panicOnErr(err)
+
 	timestart := diff.IntsToTimeDiff(starttime)
 	timeend := diff.IntsToTimeDiff(endtime)
 
 	fmt.Printf("Start: %v, End: %v, Pause: %v\n", timestart, timeend, timebreak)
 
 	difference := diff.GetTimeDiff(timestart, timeend, timebreak)
-	hours := difference.Hours()
 	fmt.Printf("Working time: %v\n", difference)
-	fmt.Printf("%.2f\n", hours)
+	fmt.Printf("%.2f\n", difference.Hours())
 }
 
 func panicOnErr(err error) {
